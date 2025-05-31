@@ -1,0 +1,18 @@
+# Project configuration
+project_id = "featherweight-benchmark"
+region     = "us-central1"
+
+# AlloyDB configuration
+cluster_id = "featherweight-benchmark"
+database_user = "postgres"
+database_password = "change-me-in-prod"
+
+# Instance configuration
+primary_cpu_count = 8
+read_pool_cpu_count = 8
+read_pool_node_count = 2
+columnar_cache_size_mb = 8192  # 8GB
+
+# Monitoring configuration
+owner_email  = "owner@example.com"
+reader_email = "reader@example.com" 
