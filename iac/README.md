@@ -1,56 +1,63 @@
 # Featherweight Infrastructure as Code
 
-This directory contains the Infrastructure as Code (IAC) configurations for the Featherweight benchmark comparison between pg_duckdb and AlloyDB.
+This directory contains the Infrastructure as Code (IAC) configurations for the Featherweight benchmark comparison between pg_duckdb and ClickHouse.
 
 ## Directory Structure
 
 ```
 iac/
 ├── environments/
-│   ├── pg_duckdb/    # GCE/GKE setup for pg_duckdb
-│   └── alloydb/      # AlloyDB managed service setup
+│   ├── pg_duckdb/           # GCE setup for pg_duckdb
+│   ├── clickhouse_cloud/    # ClickHouse Cloud setup via Terraform provider
+│   └── clickhouse_gcp/      # Self-hosted ClickHouse on GCP
 ├── modules/
-│   ├── gce/          # GCE instance module
-│   ├── gke/          # GKE cluster module
-│   ├── alloydb/      # AlloyDB cluster module
-│   └── monitoring/   # Monitoring and logging module
-└── shared/           # Shared configurations and variables
+│   ├── gce/                 # GCE instance module
+│   ├── clickhouse/          # ClickHouse cluster module
+│   ├── monitoring/          # Monitoring and logging module
+│   └── network/             # Network configuration module
+└── shared/                  # Shared configurations and variables
 ```
 
 ## Prerequisites
 
-1. Google Cloud SDK installed and configured
-2. OpenTofu CLI installed (v1.6.0 or later)
-3. `gcloud` authentication set up with appropriate permissions
+1. Required CLIs and authentication:
+   - Google Cloud SDK
+   - OpenTofu CLI (v1.6.0 or later)
+   - ClickHouse Cloud API key (for managed service)
+   - `gcloud` authentication with appropriate permissions
+
+2. Environment variables:
+
+   ```bash
+   export CLICKHOUSE_CLOUD_API_KEY="your_api_key"  # For ClickHouse Cloud
+   export GOOGLE_PROJECT="your_project_id"         # For GCP resources
+   ```
 
 ## Quick Start
 
-1. Set up your Google Cloud project:
+1. Choose your deployment type:
+
+   a. For pg_duckdb:
 
    ```bash
-   gcloud config set project YOUR_PROJECT_ID
-   ```
-
-2. Enable required APIs:
-
-   ```bash
-   gcloud services enable \
-     compute.googleapis.com \
-     container.googleapis.com \
-     alloydb.googleapis.com \
-     monitoring.googleapis.com
-   ```
-
-3. Initialize OpenTofu:
-
-   ```bash
-   cd environments/pg_duckdb  # or alloydb
+   cd environments/pg_duckdb
    tofu init
+   tofu apply
    ```
 
-4. Apply the configuration:
+   b. For ClickHouse Cloud (managed):
 
    ```bash
+   cd environments/clickhouse_cloud
+   tofu init
+   tofu apply
+   ```
+
+   c. For self-hosted ClickHouse:
+
+   ```bash
+   cd environments/clickhouse_gcp
+   tofu init
    tofu apply
    ```
 
@@ -58,38 +65,90 @@ iac/
 
 ### pg_duckdb Environment
 
-- GCE instance or GKE cluster (configurable)
+- GCE instance optimized for analytical workloads
 - PostgreSQL 15+ with pg_duckdb extension
+- Direct access to cloud storage for external tables
 - Monitoring and logging setup
-- Network configuration for benchmarking
 
-### AlloyDB Environment
+### ClickHouse Cloud Environment
 
-- Managed AlloyDB cluster
-- Primary and read pool instances
-- Columnar cache configuration
-- Monitoring integration
+- Managed ClickHouse service
+- Automatic scaling and maintenance
+- Built-in monitoring and logging
+- Network security and IAM integration
+
+### Self-hosted ClickHouse Environment
+
+- GCE instances for ClickHouse cluster
+- ZooKeeper ensemble for coordination
+- Custom monitoring and metrics
+- Network configuration for high availability
 
 ## Variables
 
-Each environment has its own `terraform.tfvars` file for configuration. See the README in each environment directory for specific variables.
+Each environment has its own `terraform.tfvars` file. Common variables include:
+
+```hcl
+# pg_duckdb
+instance_type = "n2-standard-8"
+disk_size_gb = 100
+postgres_version = "15"
+
+# clickhouse_cloud
+service_type = "production"  # or "development"
+region = "us-east"
+compute_size = "8_64"  # 8 vCPU, 64GB RAM
+
+# clickhouse_gcp
+cluster_size = 3
+instance_type = "n2-standard-8"
+disk_type = "pd-ssd"
+```
 
 ## Monitoring
 
-Both environments include:
+Included monitoring features:
 
 - Cloud Monitoring dashboards
-- Custom metrics for benchmarking
-- Log exports and analysis
-- Cost tracking
+- Query performance metrics
+- Resource utilization tracking
+- Cost analysis and optimization
+- Custom alerting rules
 
 ## Security
 
-- All instances use private IP networking
-- IAM configuration for least privilege
-- Encryption at rest and in transit
-- Audit logging enabled
+- Private networking with VPC
+- Cloud IAM integration
+- TLS encryption for all connections
+- Regular security scanning
+- Audit logging
 
 ## Cost Management
 
-Estimated costs and optimization recommendations are documented in each environment's README.
+Estimated monthly costs (US regions):
+
+- pg_duckdb: $200-500 (depends on instance size)
+- ClickHouse Cloud: $500-2000 (depends on usage)
+- Self-hosted ClickHouse: $600-1500 (3-node cluster)
+
+See individual environment READMEs for detailed cost breakdowns and optimization strategies.
+
+## Limitations
+
+### ClickHouse Cloud
+
+- Limited customization of underlying infrastructure
+- Region availability may be restricted
+- Some features require Enterprise tier
+
+### Self-hosted ClickHouse
+
+- Requires more operational overhead
+- Manual scaling and maintenance
+- Complex backup and recovery procedures
+
+### pg_duckdb
+
+- Single-node deployment
+- Shared resources with PostgreSQL
+- Limited by instance memory
