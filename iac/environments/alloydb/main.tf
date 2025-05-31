@@ -1,5 +1,5 @@
 locals {
-  project_id = "featherweight-benchmark" # Change this to your project ID
+  project_id = "tfmv-371720"
   region     = "us-central1"
 }
 
